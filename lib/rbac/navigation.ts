@@ -45,6 +45,106 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    label: "Mon espace étudiant",
+    items: [
+      {
+        label: "Mes inscriptions",
+        href: "/app/student/enrollments",
+        icon: ClipboardCheck,
+        permissions: ["enrollments.view"],
+      },
+      {
+        label: "Mon emploi du temps",
+        href: "/app/student/schedule",
+        icon: CalendarDays,
+        permissions: ["schedules.view"],
+      },
+      {
+        label: "Mes présences",
+        href: "/app/student/attendance",
+        icon: ClipboardCheck,
+        permissions: ["attendance.view"],
+      },
+      {
+        label: "Mes notes",
+        href: "/app/student/grades",
+        icon: Award,
+        permissions: ["grades.view"],
+      },
+      {
+        label: "Mes bulletins",
+        href: "/app/student/bulletins",
+        icon: FileText,
+        permissions: ["grades.view"],
+      },
+      {
+        label: "Mes paiements",
+        href: "/app/student/payments",
+        icon: Wallet,
+        permissions: ["payments.view"],
+      },
+      {
+        label: "Mes documents",
+        href: "/app/student/documents",
+        icon: FileText,
+        permissions: ["documents.view"],
+      },
+      {
+        label: "Mes notifications",
+        href: "/app/student/notifications",
+        icon: Bell,
+        permissions: ["notifications.view"],
+      },
+    ],
+  },
+  {
+    label: "Mon espace formateur",
+    items: [
+      {
+        label: "Mes classes",
+        href: "/app/teacher/classes",
+        icon: Users,
+        permissions: ["classes.view"],
+      },
+      {
+        label: "Mon emploi du temps",
+        href: "/app/teacher/schedule",
+        icon: CalendarDays,
+        permissions: ["schedules.view"],
+      },
+      {
+        label: "Présences",
+        href: "/app/teacher/attendance",
+        icon: ClipboardCheck,
+        permissions: ["attendance.view"],
+      },
+      {
+        label: "Évaluations",
+        href: "/app/teacher/assessments",
+        icon: Award,
+        permissions: ["assessments.view"],
+      },
+      {
+        label: "Saisie des notes",
+        href: "/app/teacher/grades",
+        icon: Award,
+        permissions: ["grades.view"],
+      },
+      {
+        label: "Documents",
+        href: "/app/teacher/documents",
+        icon: FileText,
+        permissions: ["documents.view"],
+      },
+      {
+        label: "Notifications",
+        href: "/app/teacher/notifications",
+        icon: Bell,
+        permissions: ["notifications.view"],
+      },
+    ],
+  },
+  {
     label: "Administration",
     items: [
       {

@@ -7,11 +7,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase/client";
-import {
-  GraduationCap, UserPlus, BookOpen, Users, ClipboardCheck, Award,
-  Wallet, AlertCircle, CalendarDays, TrendingUp, TrendingDown,
-  Banknote, Clock,
-} from "lucide-react";
+import { GraduationCap, UserPlus, BookOpen, Users, ClipboardCheck, Award, Wallet, CircleAlert as AlertCircle, CalendarDays, TrendingUp, TrendingDown, Banknote, Clock } from "lucide-react";
 
 interface DashboardStats {
   totalStudents: number;
@@ -193,36 +189,88 @@ function ComptabiliteDashboard({ stats, loading }: { stats: DashboardStats | nul
 }
 
 function FormateurDashboard() {
+  const [stats, setStats] = useState({ classCount: 0, scheduleCount: 0, assessmentCount: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setLoading(false); return; }
+        const { data: teacher } = await supabase.from("teachers").select("id").eq("profile_id", user.id).maybeSingle();
+        if (!teacher) { setLoading(false); return; }
+
+        const { data: schedules } = await supabase.from("schedules").select("class_id").eq("teacher_id", teacher.id);
+        const classIds = Array.from(new Set((schedules ?? []).map((s) => s.class_id)));
+        const { count: assessmentCount } = await supabase.from("assessments").select("*", { count: "exact", head: true });
+
+        setStats({
+          classCount: classIds.length,
+          scheduleCount: schedules?.length ?? 0,
+          assessmentCount: assessmentCount ?? 0,
+        });
+      } catch { /* ignore */ } finally { setLoading(false); }
+    })();
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard label="Mes classes" value="—" icon={Users} />
-        <StatCard label="Mes cours" value="—" icon={BookOpen} />
-        <StatCard label="Prochains cours" value="—" icon={CalendarDays} />
+        <StatCard label="Mes classes" value={loading ? "…" : stats.classCount} icon={Users} />
+        <StatCard label="Mes séances" value={loading ? "…" : stats.scheduleCount} icon={BookOpen} />
+        <StatCard label="Évaluations" value={loading ? "…" : stats.assessmentCount} icon={Award} />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard label="Présences à enregistrer" value="—" icon={ClipboardCheck} color="text-amber-600" />
-        <StatCard label="Évaluations à corriger" value="—" icon={Award} color="text-amber-600" />
-      </div>
-      <Card className="p-6"><EmptyState title="Aucune donnée disponible" message="Vos classes et cours apparaîtront ici une fois qu'ils vous seront attribués." /></Card>
+      <Card className="p-6"><EmptyState title="Espace formateur" message="Consultez vos classes, emploi du temps et évaluations depuis le menu latéral." /></Card>
     </div>
   );
 }
 
 function EtudiantDashboard() {
+  const [stats, setStats] = useState({ enrollmentCount: 0, scheduleCount: 0, gradeCount: 0, outstandingAmount: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setLoading(false); return; }
+        const { data: student } = await supabase.from("students").select("id").eq("profile_id", user.id).maybeSingle();
+        if (!student) { setLoading(false); return; }
+
+        const { count: enrCount } = await supabase.from("enrollments").select("*", { count: "exact", head: true }).eq("student_id", student.id);
+        const { count: schCount } = await supabase.from("schedules").select("*", { count: "exact", head: true });
+        const { count: gradeCount } = await supabase.from("grades").select("*", { count: "exact", head: true }).eq("student_id", student.id);
+
+        const { data: plans } = await supabase.from("payment_plans").select("id").eq("student_id", student.id);
+        const planIds = (plans ?? []).map((p) => p.id);
+        let outstanding = 0;
+        if (planIds.length > 0) {
+          const { data: insts } = await supabase.from("installments").select("amount_due, amount_paid").in("payment_plan_id", planIds);
+          outstanding = (insts ?? []).reduce((s, i) => s + (Number(i.amount_due) - Number(i.amount_paid)), 0);
+        }
+
+        setStats({
+          enrollmentCount: enrCount ?? 0,
+          scheduleCount: schCount ?? 0,
+          gradeCount: gradeCount ?? 0,
+          outstandingAmount: outstanding,
+        });
+      } catch { /* ignore */ } finally { setLoading(false); }
+    })();
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard label="Ma formation" value="—" icon={BookOpen} />
-        <StatCard label="Ma classe" value="—" icon={Users} />
-        <StatCard label="Prochains cours" value="—" icon={CalendarDays} />
+        <StatCard label="Mes inscriptions" value={loading ? "…" : stats.enrollmentCount} icon={BookOpen} />
+        <StatCard label="Mes séances" value={loading ? "…" : stats.scheduleCount} icon={CalendarDays} />
+        <StatCard label="Mes notes" value={loading ? "…" : stats.gradeCount} icon={Award} />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard label="Mes absences" value="—" icon={AlertCircle} color="text-amber-600" />
-        <StatCard label="Mes notes" value="—" icon={Award} />
-        <StatCard label="Ma situation financière" value="—" icon={Wallet} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <StatCard label="Solde restant à payer" value={loading ? "…" : formatMoney(stats.outstandingAmount)} icon={Wallet} color={stats.outstandingAmount > 0 ? "text-orange-600" : "text-green-600"} />
+        <StatCard label="Notifications" value="—" icon={AlertCircle} />
       </div>
-      <Card className="p-6"><EmptyState title="Aucune donnée disponible" message="Vos informations apparaîtront ici une fois votre inscription validée." /></Card>
+      <Card className="p-6"><EmptyState title="Espace étudiant" message="Consultez vos inscriptions, emploi du temps, notes et paiements depuis le menu latéral." /></Card>
     </div>
   );
 }

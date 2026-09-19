@@ -16,11 +16,20 @@ export function Sidebar({
   onToggleCollapse: () => void;
 }) {
   const pathname = usePathname();
-  const { permissions } = useAuth();
+  const { permissions, roles } = useAuth();
+
+  const isStudentOnly = roles.includes("etudiant") && !roles.some((r) => ["super_admin", "direction", "administration", "scolarite", "comptabilite"].includes(r));
+  const isTeacherOnly = roles.includes("formateur") && !roles.some((r) => ["super_admin", "direction", "administration", "scolarite", "comptabilite"].includes(r));
 
   const canSeeItem = (itemPermissions?: string[]) => {
     if (!itemPermissions || itemPermissions.length === 0) return true;
     return itemPermissions.some((p) => permissions.includes(p as never));
+  };
+
+  const canSeeSection = (sectionLabel: string) => {
+    if (isStudentOnly) return sectionLabel === "Principal" || sectionLabel === "Mon espace étudiant";
+    if (isTeacherOnly) return sectionLabel === "Principal" || sectionLabel === "Mon espace formateur";
+    return sectionLabel !== "Mon espace étudiant" && sectionLabel !== "Mon espace formateur";
   };
 
   return (
@@ -42,7 +51,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-2">
-        {NAV_SECTIONS.map((section) => {
+        {NAV_SECTIONS.filter((s) => canSeeSection(s.label)).map((section) => {
           const visibleItems = section.items.filter((item) => canSeeItem(item.permissions));
           if (visibleItems.length === 0) return null;
 
